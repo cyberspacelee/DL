@@ -20,6 +20,6 @@
 
 [attention paper](https://arxiv.org/pdf/1508.04025.pdf)
 
-![image-20201231194833291](C:\Users\xingc\Desktop\ml\DL\NLP\Seq2seq\img\attention.png)
+![](img/attention.png)
 
 仅实现了第一种 dot
