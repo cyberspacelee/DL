@@ -25,12 +25,14 @@ def main():
     net.load_state_dict(torch.load('./model/lenet.pth'))
 
     im = Image.open('./data/car.jpg')
-    im = transform(im)
-    im = torch.unsqueeze(im, dim=0)
+    im = transform(im)  # [C, H, W]
+    im = torch.unsqueeze(im, dim=0)  # 增加新维度 [N, C, H, W]
 
     with torch.no_grad():
         outputs = net(im)
         predict = torch.max(outputs, dim=1)[1].data.numpy()
+        # or
+        # predict = torch.softmax(outps, dim=1)
 
     print(classes[int(predict)])
 

@@ -8,6 +8,8 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 import tensorflow as tf
 from model import MyModel
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 def main():
@@ -18,9 +20,17 @@ def main():
     # normalization
     x_train, x_test = x_train / 255.0, x_test / 255.0
 
+    imgs = x_train[:3]
+    labs = y_train[:3]
+    print(labs)
+    plot_imgs = np.hstack(imgs)
+    plt.imshow(plot_imgs, cmap='gray')
+    plt.show()
+
+
     # add a channel dimension
-    x_train = x_train[:, tf.newaxis]
-    x_test = x_test[:, tf.newaxis]
+    x_train = x_train[..., tf.newaxis]
+    x_test = x_test[..., tf.newaxis]
 
     # create data generator
     train_ds = tf.data.Dataset.from_tensor_slices(
@@ -46,22 +56,52 @@ def main():
 
     # define test function including calculating loss and calculating accuracy
     @tf.function
-    def test_step(images, labels):
+    def train_step(images, labels):
         with tf.GradientTape() as tape:
             predictions = model(images)
-            loss = loss_object((labels, predictions))
+            loss = loss_object(labels, predictions)
 
-        gradient = tape.gradient((loss, model.trainable_variables))
-        optimizer.apply_gradients(zip(gradient, model, model.trainable_variables))
+        gradients = tape.gradient(loss, model.trainable_variables)
+        optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
         train_loss(loss)
         train_accuracy(labels, predictions)
+
+    # test function
+    @tf.function
+    def test_step(images, labels):
+        predictions = model(images)
+        t_loss = loss_object(labels, predictions)
+
+        test_loss(t_loss)
+        test_accuracy(labels, predictions)
+
+    EPOCHS = 5
+
+    for epoch in range(EPOCHS):
+        train_loss.reset_states()
+        train_accuracy.reset_states()
+        test_loss.reset_states()
+        test_accuracy.reset_states()
+
+        for images, labels in train_ds:
+            train_step(images, labels)
+
+        for test_images, test_labels in test_ds:
+            test_step(test_images, test_labels)
+
+        template = 'Epoch {}, Loss: {}, Accuracy: {}, Test Loss: {}, Test Accuracy: {}'
+        print(template.format(epoch + 1,
+                              train_loss.result(),
+                              train_accuracy.result() * 100,
+                              test_loss.result(),
+                              test_accuracy.result() * 100))
+
+
+if __name__ == '__main__':
+    main()
 
     
 
 
 
-
-
-if __name__ == '__main__':
-        main()
